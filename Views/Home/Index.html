@@ -1,0 +1,26 @@
+Index.cshtml
+@model List<PortalCliente.Models.Isotank>
+
+<h2>Portal do Cliente</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Isotank</th>
+            <th>Produto</th>
+            <th>Status</th>
+            <th>Previsão</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Codigo</td>
+                <td>@item.Produto</td>
+                <td>@item.Status</td>
+                <td>@(item.PrevisaoLiberacao?.ToString("dd/MM/yyyy") ?? "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>

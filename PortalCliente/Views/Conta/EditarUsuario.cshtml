@@ -1,0 +1,72 @@
+@model PortalCliente.Models.EditarUsuarioViewModel
+@{
+    ViewData["Title"] = "Editar usuário";
+    var clientes = ViewBag.Clientes as List<string> ?? new List<string>();
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="ListarUsuarios">Usuários</a></li>
+        <li class="breadcrumb-item active">Editar</li>
+    </ol>
+</nav>
+
+<h1 class="display-6 mb-1">Editar usuário</h1>
+<p class="text-muted mb-4">Altere nome, e-mail, perfil ou cliente vinculado.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="EditarUsuario" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            <div class="mb-3">
+                <label asp-for="NomeCompleto" class="form-label"></label>
+                <input asp-for="NomeCompleto" class="form-control" />
+                <span asp-validation-for="NomeCompleto" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Role" class="form-label"></label>
+                <select asp-for="Role" class="form-select" id="selectRole">
+                    <option value="Cliente">Cliente (acessa apenas seus isotanques)</option>
+                    <option value="Admin">Admin (acessa todos os isotanques)</option>
+                </select>
+                <span asp-validation-for="Role" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3" id="divCliente">
+                <label asp-for="ClienteNome" class="form-label"></label>
+                <select asp-for="ClienteNome" class="form-select">
+                    <option value="">— Selecione o cliente —</option>
+                    @foreach (var c in clientes)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+                <span asp-validation-for="ClienteNome" class="text-danger small"></span>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a asp-action="ListarUsuarios" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('selectRole').addEventListener('change', function() {
+            document.getElementById('divCliente').style.display = this.value === 'Cliente' ? '' : 'none';
+        });
+        document.getElementById('divCliente').style.display = document.getElementById('selectRole').value === 'Cliente' ? '' : 'none';
+    </script>
+}

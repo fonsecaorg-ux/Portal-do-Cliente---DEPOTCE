@@ -1,0 +1,327 @@
+@using PortalCliente.Models
+@{
+    ViewData["Title"] = "Relatórios — Bookings";
+    var ehAdmin = ViewBag.EhAdmin as bool? ?? false;
+    var clienteNome = ViewBag.ClienteNome as string;
+    var ultimaAtualizacao = ViewBag.UltimaAtualizacao as DateTime? ?? DateTime.Now;
+    var bookingsAtivos = (int)(ViewBag.BookingsAtivos ?? 0);
+    var reservadosBooking = (int)(ViewBag.ReservadosBooking ?? 0);
+    var disponiveis = (int)(ViewBag.Disponiveis ?? 0);
+    var manutencao = (int)(ViewBag.Manutencao ?? 0);
+    var totalGeral = (int)(ViewBag.TotalGeral ?? 0);
+    var isotanksComBooking = (ViewBag.IsotanksComBooking as IEnumerable<Container>) ?? Enumerable.Empty<Container>();
+    var porProdutoBooking = ViewBag.PorProdutoBooking as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var bookingsPorMesLabels = (ViewBag.BookingsPorMesLabels as IEnumerable<string>) ?? Array.Empty<string>();
+    var bookingsPorMesValores = (ViewBag.BookingsPorMesValores as IEnumerable<int>) ?? Array.Empty<int>();
+
+    var reservadosPct = totalGeral > 0 ? Math.Round((double)reservadosBooking / totalGeral * 100) : 0;
+    var disponiveisPct = totalGeral > 0 ? Math.Round((double)disponiveis / totalGeral * 100) : 0;
+    var manutencaoPct = totalGeral > 0 ? Math.Round((double)manutencao / totalGeral * 100) : 0;
+    var donutData = new[] { reservadosBooking, disponiveis, manutencao };
+    var donutLabels = new[] { "Reservados", "Disponíveis", "Em manutenção" };
+    var donutCores = new[] { "#fd7e14", "#198754", "#6f42c1" };
+}
+
+<h1 class="display-6 d-flex align-items-center gap-2">
+    <span class="fs-4">📋</span> Relatórios — Bookings
+</h1>
+<p class="text-muted mb-2">
+    @(string.IsNullOrEmpty(clienteNome) ? "Todos os clientes" : clienteNome) — Atualizado em @ultimaAtualizacao.ToString("dd/MM/yyyy HH:mm")
+</p>
+<div class="d-flex justify-content-end mb-2">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Voltar</a>
+</div>
+
+@{
+    var bookingsList = (ViewBag.BookingsList as IEnumerable<string>) ?? Array.Empty<string>();
+    var statusList = (ViewBag.StatusList as IEnumerable<string>) ?? Array.Empty<string>();
+    var produtosListFiltro = (ViewBag.ProdutosList as IEnumerable<string>) ?? Array.Empty<string>();
+    var periodoDias = ViewBag.PeriodoDias as int?;
+    var filtroBooking = ViewBag.FiltroBooking as string;
+    var filtroProduto = ViewBag.FiltroProduto as string;
+    var filtroStatus = ViewBag.FiltroStatus as string;
+}
+@* Filtros *@
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" asp-action="RelatoriosBookings" class="d-flex flex-wrap align-items-end gap-2">
+            <div>
+                <label class="form-label small mb-0">PERÍODO</label>
+                <select name="periodoDias" class="form-select form-select-sm" style="min-width: 140px;">
+                    @if (periodoDias == null) { <option value="" selected>Todos</option> } else { <option value="">Todos</option> }
+                    @if (periodoDias == 30) { <option value="30" selected>Últimos 30 dias</option> } else { <option value="30">Últimos 30 dias</option> }
+                    @if (periodoDias == 60) { <option value="60" selected>Últimos 60 dias</option> } else { <option value="60">Últimos 60 dias</option> }
+                    @if (periodoDias == 90) { <option value="90" selected>Últimos 90 dias</option> } else { <option value="90">Últimos 90 dias</option> }
+                </select>
+            </div>
+            <div>
+                <label class="form-label small mb-0">BOOKING</label>
+                <select name="booking" class="form-select form-select-sm" style="min-width: 120px;">
+                    <option value="">Todos</option>
+                    @foreach (var b in bookingsList)
+                    {
+                        if (b == filtroBooking)
+                        { <option value="@b" selected>@b</option> }
+                        else
+                        { <option value="@b">@b</option> }
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label small mb-0">PRODUTO</label>
+                <select name="produto" class="form-select form-select-sm" style="min-width: 140px;">
+                    <option value="">Todos</option>
+                    @foreach (var p in produtosListFiltro)
+                    {
+                        if (p == filtroProduto)
+                        { <option value="@p" selected>@p</option> }
+                        else
+                        { <option value="@p">@p</option> }
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label small mb-0">STATUS</label>
+                <select name="status" class="form-select form-select-sm" style="min-width: 140px;">
+                    <option value="">Todos</option>
+                    @foreach (var s in statusList)
+                    {
+                        if (s == filtroStatus)
+                        { <option value="@s" selected>@s</option> }
+                        else
+                        { <option value="@s">@s</option> }
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-danger btn-sm">Aplicar filtros</button>
+        </form>
+        <div class="mt-2">
+            <a asp-action="ExportarExcel" asp-controller="Home" class="btn btn-success btn-sm" target="_blank" rel="noopener">📥 Exportar Excel</a>
+        </div>
+    </div>
+</div>
+
+@* 4 KPI cards *@
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="small text-muted text-uppercase">Bookings ativos</div>
+                <div class="fs-4 fw-bold">@bookingsAtivos</div>
+                <div class="small text-muted">nos últimos 30 dias</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="small text-muted text-uppercase">Isotanks reservados</div>
+                <div class="fs-4 fw-bold">@reservadosBooking</div>
+                <div class="small text-muted">vinculados a um booking</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="small text-muted text-uppercase">Isotanks disponíveis</div>
+                <div class="fs-4 fw-bold">@disponiveis</div>
+                <div class="small text-muted">sem booking ativo</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="small text-muted text-uppercase">Em manutenção</div>
+                <div class="fs-4 fw-bold">@manutencao</div>
+                <div class="small text-muted">reparo ou inspeção</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Disponibilidade geral + Tabela *@
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom"><strong>Disponibilidade geral</strong></div>
+            <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+                <div style="position:relative; height:180px; width:180px; flex-shrink:0;">
+                    <canvas id="chartDisponibilidadeBookings"></canvas>
+                    <div class="position-absolute top-50 start-50 translate-middle text-center" style="pointer-events:none;">
+                        <span class="fw-bold fs-5">@totalGeral</span><br /><span class="small text-muted">isotanks</span>
+                    </div>
+                </div>
+                <div class="flex-grow-1" style="min-width: 180px;">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#fd7e14;"></span>
+                        <span class="small">Reservados</span>
+                        <span class="ms-auto fw-semibold">@reservadosBooking @reservadosPct%</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#198754;"></span>
+                        <span class="small">Disponíveis</span>
+                        <span class="ms-auto fw-semibold">@disponiveis @disponiveisPct%</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#6f42c1;"></span>
+                        <span class="small">Em manutenção</span>
+                        <span class="ms-auto fw-semibold">@manutencao @manutencaoPct%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <strong>Bookings ativos — Isotanks vinculados</strong>
+                <span class="text-muted small ms-2">@reservadosBooking isotanks em @bookingsAtivos bookings</span>
+            </div>
+            <div class="card-body p-0 overflow-auto" style="max-height: 320px;">
+                <table class="table table-sm table-hover mb-0" style="font-size: 13px;">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Booking</th>
+                            <th>Isotank</th>
+                            <th>Produto</th>
+                            <th>Status</th>
+                            <th>Placa veículo</th>
+                            <th>Previsão saída</th>
+                            <th>Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in isotanksComBooking.OrderBy(x => x.NumeroBooking).ThenBy(x => x.Codigo))
+                        {
+                            var previsaoSaida = c.DataSaida ?? c.PrevisaoLiberacao;
+                            <tr>
+                                <td><a asp-action="Index" asp-route-busca="@c.NumeroBooking" class="text-primary text-decoration-none">@c.NumeroBooking</a></td>
+                                <td>@c.Codigo</td>
+                                <td>@c.Produto</td>
+                                <td><span class="badge bg-secondary">@c.Status</span></td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(c.PlacaVeiculo) ? "—" : c.PlacaVeiculo)</td>
+                                <td>@(previsaoSaida?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(c.UrlFoto))
+                                    { <a href="@c.UrlFoto" target="_blank" rel="noopener" class="text-primary">Ver foto</a> }
+                                    else
+                                    { <span class="text-muted">—</span> }
+                                </td>
+                            </tr>
+                        }
+                        @if (!isotanksComBooking.Any())
+                        {
+                            <tr><td colspan="7" class="text-muted text-center py-3">Nenhum isotank vinculado a booking no período.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Gráficos inferior *@
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom"><strong>Bookings abertos por mês</strong></div>
+            <div class="card-body">
+                <div style="position:relative; height: 220px;">
+                    <canvas id="chartBookingsPorMes"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom"><strong>Isotanks por produto nos bookings ativos</strong></div>
+            <div class="card-body">
+                <div style="position:relative; height: 220px;">
+                    <canvas id="chartProdutoBookings"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            var totalGeral = @totalGeral;
+            var donutData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(donutData));
+            var donutLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(donutLabels));
+            var donutCores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(donutCores));
+
+            var ctxDoughnut = document.getElementById('chartDisponibilidadeBookings');
+            if (ctxDoughnut && typeof Chart !== 'undefined') {
+                new Chart(ctxDoughnut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: donutLabels,
+                        datasets: [{ data: donutData, backgroundColor: donutCores, borderWidth: 0 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        cutout: '55%'
+                    }
+                });
+            }
+
+            var mesesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bookingsPorMesLabels.ToList()));
+            var mesesValores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bookingsPorMesValores.ToList()));
+            var ctxBar = document.getElementById('chartBookingsPorMes');
+            if (ctxBar && mesesLabels.length && typeof Chart !== 'undefined') {
+                new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: mesesLabels,
+                        datasets: [{ label: 'Bookings', data: mesesValores, backgroundColor: '#0d6efd', borderWidth: 0 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: {}
+                        }
+                    }
+                });
+            }
+
+            var produtoLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(porProdutoBooking.Keys.ToList()));
+            var produtoValores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(porProdutoBooking.Values.ToList()));
+            var coresProd = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#dc3545'];
+            var ctxHoriz = document.getElementById('chartProdutoBookings');
+            if (ctxHoriz && produtoLabels.length && typeof Chart !== 'undefined') {
+                new Chart(ctxHoriz, {
+                    type: 'bar',
+                    data: {
+                        labels: produtoLabels,
+                        datasets: [{
+                            label: 'Qtd',
+                            data: produtoValores,
+                            backgroundColor: produtoValores.map(function(_, i) { return coresProd[i % coresProd.length]; }),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            y: {}
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+}

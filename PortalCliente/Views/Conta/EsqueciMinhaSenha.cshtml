@@ -1,0 +1,61 @@
+@model PortalCliente.Models.EsqueciMinhaSenhaViewModel
+@{
+    ViewData["Title"] = "Esqueci minha senha";
+    Layout = "_LayoutLogin";
+}
+
+<div class="login-split-wrap">
+    <div class="login-split-left order-2 order-lg-1">
+        <div class="login-split-left-inner">
+            <div class="left-top">
+                <div class="brand" style="display:flex; align-items:center; gap:16px;">
+                    <img src="~/images/Logo_Depotce.svg" alt="Depotce" style="height:52px;"/>
+                    <img src="~/images/Logo_Cesari.svg" alt="Cesari" style="height:44px;"/>
+                </div>
+                <div class="brand-sub" style="margin-top:6px; font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase;">Grupo Cesari</div>
+            </div>
+            <p class="login-split-tag">Portal do Cliente</p>
+            <h1 class="login-split-slogan">Esqueceu sua senha?</h1>
+            <p class="login-split-desc">
+                Informe o e-mail da sua conta. Enviaremos um link para você definir uma nova senha. O link expira em algumas horas.
+            </p>
+        </div>
+    </div>
+
+    <div class="login-split-right order-1 order-lg-2">
+        <div class="login-split-right-inner">
+            <p class="login-split-welcome-label">REDEFINIÇÃO DE SENHA</p>
+            <h2 class="login-split-welcome-title">Enviar link por e-mail</h2>
+            <p class="login-split-welcome-sub">Informe o e-mail cadastrado no portal</p>
+
+            @if (TempData["EsqueciMinhaSenhaSucesso"] != null)
+            {
+                <div class="alert alert-success py-2 small">@TempData["EsqueciMinhaSenhaSucesso"]</div>
+            }
+            @if (TempData["EsqueciMinhaSenhaErro"] != null)
+            {
+                <div class="alert alert-danger py-2 small">@TempData["EsqueciMinhaSenhaErro"]</div>
+            }
+
+            <form asp-action="EsqueciMinhaSenha" method="post" class="login-split-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                <div class="mb-4">
+                    <label asp-for="Email" class="form-label login-split-label">E-mail</label>
+                    <input asp-for="Email" class="form-control form-control-lg" autocomplete="email" autofocus placeholder="seu@email.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 login-split-btn">ENVIAR LINK</button>
+            </form>
+
+            <p class="mt-4 mb-0 text-center">
+                <a asp-action="Login" class="small text-muted text-decoration-none">← Voltar ao login</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

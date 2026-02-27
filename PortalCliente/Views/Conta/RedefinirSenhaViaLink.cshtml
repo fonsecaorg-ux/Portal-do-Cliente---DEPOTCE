@@ -1,0 +1,60 @@
+@model PortalCliente.Models.RedefinirSenhaViaLinkViewModel
+@{
+    ViewData["Title"] = "Redefinir senha";
+    Layout = "_LayoutLogin";
+}
+
+<div class="login-split-wrap">
+    <div class="login-split-left order-2 order-lg-1">
+        <div class="login-split-left-inner">
+            <div class="left-top">
+                <div class="brand" style="display:flex; align-items:center; gap:16px;">
+                    <img src="~/images/Logo_Depotce.svg" alt="Depotce" style="height:52px;"/>
+                    <img src="~/images/Logo_Cesari.svg" alt="Cesari" style="height:44px;"/>
+                </div>
+                <div class="brand-sub" style="margin-top:6px; font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase;">Grupo Cesari</div>
+            </div>
+            <p class="login-split-tag">Portal do Cliente</p>
+            <h1 class="login-split-slogan">Nova senha</h1>
+            <p class="login-split-desc">
+                Defina uma nova senha para acessar o portal. Use ao menos 6 caracteres.
+            </p>
+        </div>
+    </div>
+
+    <div class="login-split-right order-1 order-lg-2">
+        <div class="login-split-right-inner">
+            <p class="login-split-welcome-label">REDEFINIÇÃO</p>
+            <h2 class="login-split-welcome-title">Definir nova senha</h2>
+            <p class="login-split-welcome-sub">Preencha os campos abaixo</p>
+
+            <form asp-action="RedefinirSenhaViaLink" method="post" class="login-split-form">
+                <input type="hidden" asp-for="UserId" />
+                <input type="hidden" asp-for="Token" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                <div class="mb-3">
+                    <label asp-for="NovaSenha" class="form-label login-split-label">Nova senha</label>
+                    <input asp-for="NovaSenha" class="form-control form-control-lg" autocomplete="new-password" placeholder="••••••••" />
+                    <span asp-validation-for="NovaSenha" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ConfirmarSenha" class="form-label login-split-label">Confirmar nova senha</label>
+                    <input asp-for="ConfirmarSenha" class="form-control form-control-lg" autocomplete="new-password" placeholder="••••••••" />
+                    <span asp-validation-for="ConfirmarSenha" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 login-split-btn">REDEFINIR SENHA</button>
+            </form>
+
+            <p class="mt-4 mb-0 text-center">
+                <a asp-action="Login" class="small text-muted text-decoration-none">← Voltar ao login</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

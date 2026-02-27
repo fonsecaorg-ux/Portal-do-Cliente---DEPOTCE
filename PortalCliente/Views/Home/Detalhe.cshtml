@@ -1,0 +1,308 @@
+@model PortalCliente.Models.Container
+@using PortalCliente.Models
+@{
+    ViewData["Title"] = "Detalhe do Isotank";
+    var ehAdmin = User.IsInRole("Admin");
+    string MotivoStatus(string status) => status switch
+    {
+        "Ag. Reparo"           => "Aguardando conclusão do reparo",
+        "Ag. Off Hire"         => "Aguardando devolução ao armador",
+        "Ag. Inspeção"         => "Aguardando inspeção técnica",
+        "Ag. Limpeza"          => "Aguardando limpeza",
+        "Ag. Envio Estimativa" => "Aguardando elaboração e envio de estimativa ao armador",
+        _                      => status
+    };
+    string ProximaEtapa(string status) => status switch
+    {
+        "Ag. Off Hire"         => "Aguardando instrução do armador",
+        "Ag. Limpeza"          => "Após limpeza: Ag. Inspeção",
+        "Ag. Reparo"           => "Após reparo: Ag. Inspeção",
+        "Ag. Inspeção"         => "Após inspeção: liberação do isotank",
+        "Ag. Envio Estimativa" => "Após aprovação da estimativa: Ag. Reparo",
+        _                      => "Conforme fluxo operacional"
+    };
+    var agora = DateTime.Now;
+    var eventos = new List<(DateTime Data, string Titulo, string? Detalhe, bool EhPrevisao)>();
+    if (Model.DataHoraDescarregadoPatio.HasValue)
+        eventos.Add((Model.DataHoraDescarregadoPatio.Value, "📦 Descarregado no pátio", Model.DataHoraDescarregadoPatio.Value.ToString("dd/MM/yyyy HH:mm"), false));
+    if (Model.DataHoraCarregadoVeiculo.HasValue)
+        eventos.Add((Model.DataHoraCarregadoVeiculo.Value, "🚛 Carregado no veículo", Model.PlacaVeiculo != null ? $"{Model.DataHoraCarregadoVeiculo.Value:dd/MM/yyyy HH:mm} · {Model.PlacaVeiculo}" : Model.DataHoraCarregadoVeiculo.Value.ToString("dd/MM/yyyy HH:mm"), false));
+    if (Model.PrevisaoChegadaTerminal.HasValue)
+        eventos.Add((Model.PrevisaoChegadaTerminal.Value, "🚢 Previsão chegada terminal", Model.PrevisaoChegadaTerminal.Value.ToString("dd/MM/yyyy HH:mm"), true));
+    if (Model.PrevisaoLiberacao.HasValue)
+        eventos.Add((Model.PrevisaoLiberacao.Value, "📅 Previsão de liberação", Model.PrevisaoLiberacao.Value.ToString("dd/MM/yyyy"), true));
+    eventos = eventos.OrderBy(e => e.Data).ToList();
+    var passados = eventos.Where(e => e.Data <= agora).ToList();
+    var futuros = eventos.Where(e => e.Data > agora).ToList();
+    var diasNoStatus = Model.DiasNoStatus ?? 0;
+    var semRisco = diasNoStatus < 10;
+    var hoje = DateTime.Today;
+    var testeVencido = Model.TestePeriodicoVencimento.HasValue && Model.TestePeriodicoVencimento.Value.Date < hoje;
+    var testeProximo = Model.TestePeriodicoVencimento.HasValue && !testeVencido && Model.TestePeriodicoVencimento.Value.Date <= hoje.AddDays(60);
+    var temDocumentos = !string.IsNullOrWhiteSpace(Model.UrlCertificadoLavagem) || !string.IsNullOrWhiteSpace(Model.UrlLaudoVistoria);
+    var temLocalizacao = !string.IsNullOrWhiteSpace(Model.Patio) || !string.IsNullOrWhiteSpace(Model.Bloco) || !string.IsNullOrWhiteSpace(Model.Fila) || !string.IsNullOrWhiteSpace(Model.Pilha);
+    var urlsFotosLista = !string.IsNullOrWhiteSpace(Model.UrlsFotos)
+        ? Model.UrlsFotos!.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(u => u.Trim()).Where(u => u.Length > 0).ToList()
+        : (!string.IsNullOrWhiteSpace(Model.UrlFoto) ? new List<string> { Model.UrlFoto! } : new List<string>());
+}
+
+<style>
+    .detalhe-isotank .card { border: 1px solid #e9ecef; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .detalhe-isotank .card-header { background: #f8f9fa; font-weight: 600; font-size: 0.875rem; color: #495057; border-bottom: 1px solid #e9ecef; }
+    .detalhe-isotank .tag-status { font-size: 0.875rem; padding: 0.35rem 0.75rem; }
+    .detalhe-isotank .timeline-detalhe { border-left: 2px solid #dee2e6; margin-left: 0.35rem; padding-left: 1rem; }
+    .detalhe-isotank .timeline-detalhe .timeline-item { position: relative; padding-bottom: 0.75rem; }
+    .detalhe-isotank .timeline-detalhe .timeline-item:last-child { padding-bottom: 0; }
+    .detalhe-isotank .timeline-detalhe .timeline-marker { position: absolute; left: -1.2rem; top: 0.2rem; width: 10px; height: 10px; border-radius: 50%; }
+    .detalhe-isotank .timeline-detalhe .timeline-atual .timeline-marker { width: 12px; height: 12px; left: -1.35rem; top: 0.1rem; }
+    .detalhe-isotank .btn-excel { background: #198754; color: #fff; border: none; }
+    .detalhe-isotank .btn-excel:hover { background: #157347; color: #fff; }
+</style>
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">@(ehAdmin ? "Isotanks" : "Seus isotanques")</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Detalhe</li>
+    </ol>
+</nav>
+
+<div class="detalhe-isotank">
+    <!-- Header: código + tag status + produto/cliente + dias + risco -->
+    <div class="mb-3">
+        <div class="d-flex flex-wrap align-items-baseline gap-2">
+            <h1 class="display-6 mb-0">@Model.Codigo</h1>
+            <span class="badge bg-warning text-dark tag-status">@Model.Status</span>
+        </div>
+        <p class="text-muted mb-1">@Model.Produto – @Model.Cliente</p>
+        <div class="d-flex flex-wrap align-items-center gap-3 small">
+            <span>🕐 @(Model.DiasNoStatus.HasValue ? $"{Model.DiasNoStatus.Value} dia(s) neste status" : "–")</span>
+            @if (semRisco)
+            {
+                <span class="text-success">✓ Nenhum risco identificado</span>
+            }
+            else if (Model.DiasNoStatus >= 10)
+            {
+                <span class="text-danger">⚠ Parado há @(Model.DiasNoStatus) dias — requer atenção</span>
+            }
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Card Situação Atual -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center">
+                    <span class="me-2">🕐</span> Situação Atual
+                </div>
+                <div class="card-body">
+                    <strong>@Model.Status</strong><br />
+                    <span class="text-muted small">@(Model.DiasNoStatus.HasValue ? $"{Model.DiasNoStatus.Value} dia(s) neste status" : "–")</span><br />
+                    <span class="text-muted small">Motivo: @MotivoStatus(Model.Status ?? "")</span><br />
+                    <br />
+                    <span>Próxima etapa: <strong>@ProximaEtapa(Model.Status ?? "")</strong></span>
+                    <div class="border rounded p-2 bg-light small mt-2">
+                        <span class="text-muted">SLA:</span> <span>–</span> <em>(não informado pelo MBM)</em>
+                        <br />
+                        <span class="text-muted">Previsão de liberação:</span> @(Model.PrevisaoLiberacao?.ToString("dd/MM/yyyy") ?? "–")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Indicadores Rápidos -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Indicadores Rápidos</div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2">📅 Dias no status: <strong>@(Model.DiasNoStatus?.ToString() ?? "–")</strong></li>
+                        <li class="mb-2">🕐 Última carga: <strong>@Model.Produto</strong></li>
+                        <li class="mb-2">
+                            ✓ Teste periódico:
+                            @if (Model.TestePeriodicoVencimento.HasValue)
+                            {
+                                <strong>@Model.TestePeriodicoVencimento.Value.ToString("dd/MM/yyyy")</strong>
+                                if (testeVencido) { <span class="text-danger">(vencido)</span> }
+                                else if (testeProximo) { <span class="text-warning">(próximo do vencimento)</span> }
+                            }
+                            else
+                            { <span class="text-muted">–</span> }
+                        </li>
+                        <li class="mb-0">
+                            🔧 Reparo acumulado:
+                            @if (Model.ReparoAcumuladoValor.HasValue && Model.ReparoAcumuladoValor.Value > 0)
+                            { <strong>@Model.ReparoAcumuladoValor.Value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) R$</strong> }
+                            else
+                            { <span class="text-muted">–</span> }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Informações Gerais -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Informações Gerais</div>
+                <div class="card-body small">
+                    <p class="mb-1"><span class="text-muted">Código:</span> @Model.Codigo</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.Tipo)) { <p class="mb-1"><span class="text-muted">Tipo:</span> @Model.Tipo</p> }
+                    <p class="mb-1"><span class="text-muted">Produto:</span> @Model.Produto</p>
+                    <p class="@(string.IsNullOrWhiteSpace(Model.ProprietarioArmador) ? "mb-0" : "mb-1")"><span class="text-muted">Cliente:</span> @Model.Cliente</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.ProprietarioArmador)) { <p class="mb-0"><span class="text-muted">Proprietário/Armador:</span> @Model.ProprietarioArmador</p> }
+                </div>
+            </div>
+        </div>
+
+        @if (temDocumentos)
+        {
+        <!-- Card Documentos -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Documentos</div>
+                <div class="card-body small">
+                    @if (!string.IsNullOrWhiteSpace(Model.UrlCertificadoLavagem))
+                    {
+                        <p class="mb-2">
+                            <a href="@Model.UrlCertificadoLavagem" target="_blank" rel="noopener" class="text-decoration-none">📄 Certificado de Lavagem</a>
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.UrlLaudoVistoria))
+                    {
+                        <p class="mb-0">
+                            <a href="@Model.UrlLaudoVistoria" target="_blank" rel="noopener" class="text-decoration-none">📋 Laudo de Vistoria (EIR)</a>
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+        }
+
+        @if (temLocalizacao)
+        {
+        <!-- Card Localização no pátio (quando informado pelo MBM) -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Localização no pátio</div>
+                <div class="card-body small">
+                    @if (!string.IsNullOrWhiteSpace(Model.Patio)) { <p class="mb-1"><span class="text-muted">Pátio:</span> @Model.Patio</p> }
+                    @if (!string.IsNullOrWhiteSpace(Model.Bloco)) { <p class="mb-1"><span class="text-muted">Bloco:</span> @Model.Bloco</p> }
+                    @if (!string.IsNullOrWhiteSpace(Model.Fila)) { <p class="mb-1"><span class="text-muted">Fila:</span> @Model.Fila</p> }
+                    @if (!string.IsNullOrWhiteSpace(Model.Pilha)) { <p class="mb-0"><span class="text-muted">Pilha:</span> @Model.Pilha</p> }
+                </div>
+            </div>
+        </div>
+        }
+
+        <!-- Card Linha do Tempo -->
+        <div class="col-12 col-md-6 col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">Linha do Tempo</div>
+                <div class="card-body">
+                    <div class="timeline-detalhe">
+                        @foreach (var e in passados)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content ps-2">
+                                    <strong>@e.Titulo</strong>
+                                    <div class="text-muted small">@e.Detalhe</div>
+                                </div>
+                            </div>
+                        }
+                        <div class="timeline-item timeline-atual">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content ps-2">
+                                <strong>📍 Situação atual</strong>
+                                <div class="text-muted small">@Model.Status · @(Model.DiasNoStatus.HasValue ? $"{Model.DiasNoStatus.Value} dia(s) neste status" : "–")</div>
+                            </div>
+                        </div>
+                        @foreach (var e in futuros)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-content ps-2">
+                                    <strong>@e.Titulo</strong>
+                                    <div class="text-muted small">@e.Detalhe</div>
+                                </div>
+                            </div>
+                        }
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content ps-2">
+                                <strong>→ Próxima etapa: @ProximaEtapa(Model.Status ?? "")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Galeria de Fotos -->
+        <div class="col-12 col-md-6">
+            <div class="card h-100">
+                <div class="card-header">Galeria de Fotos</div>
+                <div class="card-body">
+                    @if (urlsFotosLista.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            @foreach (var url in urlsFotosLista.Take(6))
+                            {
+                                <a href="@url" target="_blank" rel="noopener" class="d-inline-block">
+                                    <img src="@url" alt="Vistoria @Model.Codigo" class="img-fluid rounded border" style="max-height: 120px; width: auto; object-fit: cover;" />
+                                </a>
+                            }
+                        </div>
+                        @if (urlsFotosLista.Count > 1)
+                        {
+                            <p class="small text-muted mb-0">@urlsFotosLista.Count foto(s) da vistoria. Clique para ampliar.</p>
+                        }
+                        else
+                        {
+                            <a href="@urlsFotosLista.First()" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Ver foto</a>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-0">Nenhuma foto disponível no momento.</p>
+                        <span class="text-muted small">(Quando o MBM disponibilizar fotos da vistoria, elas aparecerão aqui.)</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Observações (origem: MBM) -->
+        <div class="col-12 col-md-6">
+            <div class="card h-100">
+                <div class="card-header">Observações</div>
+                <div class="card-body">
+                    @{
+                        var observacoes = ViewBag.Observacoes as IList<ObservacaoIsotank> ?? new List<ObservacaoIsotank>();
+                    }
+                    @if (observacoes.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Nenhuma observação do MBM para esta unidade.</p>
+                    }
+                    else
+                    {
+                        <div>
+                            @foreach (var obs in observacoes)
+                            {
+                                <div class="mb-3 pb-2 border-bottom border-light">
+                                    <div class="text-muted small">@obs.DataHora.ToString("dd/MM/yyyy HH:mm") — @obs.AutorNome</div>
+                                    <div class="fw-bold">@obs.Texto</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-top">
+        <a asp-action="Index" class="btn btn-outline-secondary">← @(ehAdmin ? "Voltar" : "Voltar aos seus isotanques")</a>
+        <a asp-action="Contato" asp-route-codigo="@Model.Codigo" class="btn btn-outline-primary ms-2">Fale conosco sobre este Isotank</a>
+        <a asp-action="ExportarDetalhePdf" asp-route-codigo="@Model.Codigo" class="btn btn-outline-danger ms-2">📄 Gerar PDF</a>
+    </div>
+</div>

@@ -1,0 +1,109 @@
+@model PortalCliente.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+    Layout = "_LayoutLogin";
+}
+
+<div class="login-split-wrap">
+    <!-- Painel esquerdo 30%: branding e benefícios -->
+    <div class="login-split-left order-2 order-lg-1">
+        <div class="login-split-left-inner">
+            <div class="left-top">
+                <div class="brand" style="display:flex; align-items:center; gap:16px;">
+                    <img src="~/images/LogoDepotce.png" alt="Depotce" style="height:60px;"/>
+                    <img src="~/images/LogoCesari.png" alt="Cesari" style="height:60px;"/>
+                </div>
+                <div class="brand-sub" style="margin-top:6px; font-size:20px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase;">Grupo Cesari</div>
+            </div>
+            <p class="login-split-tag" style="font-size: 24px;">Portal do Cliente</p>
+<h1 class="login-split-slogan" style="margin-top: 90px;">Seu estoque.<br />Em tempo real.</h1>            <p class="login-split-desc">
+                Consulte o status dos seus isotanques, previsões de liberação e relatórios operacionais com informações atualizadas em tempo real.
+            </p>
+            <ul class="login-split-features">
+                <li>
+                    <span class="login-split-feature-icon" aria-hidden="true">📦</span>
+                    <div>
+                        <strong>Estoque em tempo real</strong>
+                        <span>Status atualizado direto do sistema MBM</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="login-split-feature-icon" aria-hidden="true">🔔</span>
+                    <div>
+                        <strong>Alertas automáticos</strong>
+                        <span>Isotanques parados e liberações próximas</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="login-split-feature-icon" aria-hidden="true">📊</span>
+                    <div>
+                        <strong>Relatórios e bookings</strong>
+                        <span>Visão completa da sua operação</span>
+                    </div>
+                </li>
+            </ul>
+            <div class="login-split-left-footer">
+                Célula Inovação - SI • Grupo Cesari — Versão 1.0.0 (Março 2026)
+            </div>
+        </div>
+    </div>
+
+    <!-- Painel direito 70%: formulário -->
+    <div class="login-split-right order-1 order-lg-2">
+        <div class="login-split-right-inner">
+            <p class="login-split-welcome-label">BEM-VINDO</p>
+            <h2 class="login-split-welcome-title">Acesse sua conta</h2>
+            <p class="login-split-welcome-sub">Depotce — acesso restrito a clientes cadastrados</p>
+
+            @if (TempData["RedefinirSenhaSucesso"] != null)
+            {
+                <div class="alert alert-success py-2 small">@TempData["RedefinirSenhaSucesso"]</div>
+            }
+            @if (TempData["RedefinirSenhaErro"] != null)
+            {
+                <div class="alert alert-danger py-2 small">@TempData["RedefinirSenhaErro"]</div>
+            }
+
+            <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post" class="login-split-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label login-split-label">E-mail</label>
+                    <input asp-for="Email" class="form-control form-control-lg" autocomplete="email" autofocus placeholder="seu@email.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Senha" class="form-label login-split-label">Senha</label>
+                    <input asp-for="Senha" class="form-control form-control-lg" autocomplete="current-password" placeholder="••••••••" />
+                    <span asp-validation-for="Senha" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="form-check mb-0">
+                        <input asp-for="LembrarMe" class="form-check-input" />
+                        <label asp-for="LembrarMe" class="form-check-label">Manter conectado</label>
+                    </div>
+                    <a asp-controller="Conta" asp-action="EsqueciMinhaSenha" class="small text-muted text-decoration-none">Esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 login-split-btn">ENTRAR</button>
+            </form>
+
+            <div class="login-split-restrito mt-4">
+                <span class="login-split-restrito-icon" aria-hidden="true">🔒</span>
+                <div>
+                    <strong>Acesso restrito</strong> — Não possui acesso? Entre em contato com a equipe Depotce para solicitar seu cadastro.
+                </div>
+            </div>
+
+            <div class="login-split-right-footer">
+                Célula Inovação - SI • Grupo Cesari — Versão 1.0.0 (Março 2026)
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,46 @@
+@model PortalCliente.Models.RedefinirSenhaViewModel
+@{
+    ViewData["Title"] = "Redefinir senha";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="ListarUsuarios">Usuários</a></li>
+        <li class="breadcrumb-item active">Redefinir senha</li>
+    </ol>
+</nav>
+
+<h1 class="display-6 mb-1">Redefinir senha</h1>
+<p class="text-muted mb-4">Defina uma nova senha para <strong>@Model.NomeCompleto</strong> (@Model.Email). Avise o usuário para acessar com a nova senha.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="RedefinirSenha" method="post">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="NomeCompleto" />
+            <input type="hidden" asp-for="Email" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            <div class="mb-3">
+                <label asp-for="NovaSenha" class="form-label"></label>
+                <input asp-for="NovaSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="NovaSenha" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ConfirmarSenha" class="form-label"></label>
+                <input asp-for="ConfirmarSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmarSenha" class="text-danger small"></span>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Redefinir senha</button>
+                <a asp-action="ListarUsuarios" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

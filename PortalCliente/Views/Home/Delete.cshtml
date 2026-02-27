@@ -1,0 +1,30 @@
+@model PortalCliente.Models.Container
+@{
+    ViewData["Title"] = "Excluir container";
+}
+
+<h1 class="display-6">Excluir container</h1>
+
+<div class="alert alert-warning" role="alert">
+    Tem certeza que deseja excluir o container <strong>@Model.Codigo</strong>?
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Código</dt>
+    <dd class="col-sm-9">@Model.Codigo</dd>
+
+    <dt class="col-sm-3">Produto</dt>
+    <dd class="col-sm-9">@Model.Produto</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Previsão de liberação</dt>
+    <dd class="col-sm-9">@(Model.PrevisaoLiberacao?.ToString("dd/MM/yyyy") ?? "-")</dd>
+</dl>
+
+<form asp-action="Delete" method="post" class="mt-3">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Excluir</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

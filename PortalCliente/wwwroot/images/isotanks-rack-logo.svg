@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 400" width="420" height="400">
+  <defs>
+    <linearGradient id="tankBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a82020"/>
+      <stop offset="35%" style="stop-color:#8B1A1A"/>
+      <stop offset="100%" style="stop-color:#5a1010"/>
+    </linearGradient>
+    <linearGradient id="tankShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="capL" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a0e0e"/>
+      <stop offset="100%" style="stop-color:#8B1A1A"/>
+    </linearGradient>
+    <linearGradient id="capR" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B1A1A"/>
+      <stop offset="100%" style="stop-color:#4a0e0e"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d0d0d0"/>
+      <stop offset="50%" style="stop-color:#a0a0a0"/>
+      <stop offset="100%" style="stop-color:#707070"/>
+    </linearGradient>
+    <linearGradient id="steelH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#b0b0b0"/>
+      <stop offset="50%" style="stop-color:#e8e8e8"/>
+      <stop offset="100%" style="stop-color:#b0b0b0"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#00000050"/>
+    </filter>
+
+    <!-- SÍMBOLO DEPOTCE em branco, tamanho ~22x22px centrado em 0,0 -->
+    <g id="simbolo">
+      <g transform="scale(0.138) translate(-80,-80)">
+        <polygon points="0,0 52,0 0,52"           fill="white"/>
+        <polygon points="108,0 160,0 160,52"      fill="white"/>
+        <polygon points="0,108 0,160 52,160"      fill="white"/>
+        <polygon points="160,108 160,160 108,160" fill="white"/>
+        <circle cx="80" cy="80" r="62" fill="none" stroke="white" stroke-width="14"/>
+        <circle cx="80" cy="80" r="28" fill="none" stroke="white" stroke-width="10"/>
+      </g>
+    </g>
+
+    <!-- TANQUE completo -->
+    <g id="tank">
+      <ellipse cx="16" cy="39" rx="14" ry="34" fill="url(#capL)"/>
+      <rect x="16" y="5" width="134" height="68" fill="url(#tankBody)"/>
+      <ellipse cx="150" cy="39" rx="14" ry="34" fill="url(#capR)"/>
+      <rect x="16" y="5" width="134" height="28" fill="url(#tankShine)"/>
+      <!-- Símbolo à esquerda -->
+      <use href="#simbolo" transform="translate(40, 39)"/>
+      <!-- Texto Depotce à direita do símbolo -->
+      <text x="100" y="44"
+            font-family="Georgia, serif"
+            font-size="13"
+            font-weight="bold"
+            fill="white"
+            text-anchor="middle"
+            letter-spacing="0.5"
+            opacity="0.95">Depotce</text>
+      <!-- Válvula -->
+      <rect x="78" y="2" width="8" height="5" rx="1" fill="#cccccc"/>
+    </g>
+  </defs>
+
+  <!-- FUNDO -->
+  <rect width="420" height="400" fill="#e0e0e0" rx="8"/>
+
+  <!-- VIGAS VERTICAIS -->
+  <rect x="18"  y="10" width="10" height="378" fill="url(#steel)" rx="2"/>
+  <rect x="200" y="10" width="10" height="378" fill="url(#steel)" rx="2"/>
+  <rect x="392" y="10" width="10" height="378" fill="url(#steel)" rx="2"/>
+
+  <!-- VIGAS HORIZONTAIS -->
+  <rect x="18" y="10"  width="384" height="8" fill="url(#steelH)" rx="2"/>
+  <rect x="18" y="103" width="384" height="8" fill="url(#steelH)" rx="2"/>
+  <rect x="18" y="196" width="384" height="8" fill="url(#steelH)" rx="2"/>
+  <rect x="18" y="289" width="384" height="8" fill="url(#steelH)" rx="2"/>
+  <rect x="18" y="380" width="384" height="8" fill="url(#steelH)" rx="2"/>
+
+  <!-- PARAFUSOS -->
+  <circle cx="23"  cy="14"  r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="205" cy="14"  r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="397" cy="14"  r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="23"  cy="107" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="205" cy="107" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="397" cy="107" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="23"  cy="200" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="205" cy="200" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="397" cy="200" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="23"  cy="293" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="205" cy="293" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="397" cy="293" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="23"  cy="384" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="205" cy="384" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+  <circle cx="397" cy="384" r="3" fill="#888" stroke="#666" stroke-width="0.5"/>
+
+  <!-- LINHA 1 -->
+  <use href="#tank" transform="translate(28, 18)"  filter="url(#shadow)"/>
+  <use href="#tank" transform="translate(210, 18)" filter="url(#shadow)"/>
+  <!-- LINHA 2 -->
+  <use href="#tank" transform="translate(28, 111)"  filter="url(#shadow)"/>
+  <use href="#tank" transform="translate(210, 111)" filter="url(#shadow)"/>
+  <!-- LINHA 3 -->
+  <use href="#tank" transform="translate(28, 204)"  filter="url(#shadow)"/>
+  <use href="#tank" transform="translate(210, 204)" filter="url(#shadow)"/>
+  <!-- LINHA 4 -->
+  <use href="#tank" transform="translate(28, 297)"  filter="url(#shadow)"/>
+  <use href="#tank" transform="translate(210, 297)" filter="url(#shadow)"/>
+
+</svg>

@@ -1,0 +1,134 @@
+@inject IConfiguration Config
+@using Microsoft.AspNetCore.Identity
+@using PortalCliente.Models
+@inject SignInManager<UsuarioAplicacao> SignInManager
+@inject UserManager<UsuarioAplicacao> UserManager
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Portal do Cliente Depotce</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PortalCliente.styles.css" asp-append-version="true" />
+</head>
+<body class="layout-body">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white box-shadow mb-3 navbar-depotce-border">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Portal do Cliente</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Isotanques</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Dashboard">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark d-flex align-items-center" asp-controller="Home" asp-action="Alertas">
+                                    Alertas
+                                    @await Component.InvokeAsync("AlertasBadge")
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Documentos">Documentos</a>
+                            </li>
+                            @if (!string.IsNullOrWhiteSpace(Config["MBM:BaseUrl"]))
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link text-success small" title="Dados vindos da API do MBM">● Dados: MBM</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link text-secondary small" title="Dados do banco local">● Dados: Local</span>
+                                </li>
+                            }
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Relatorios">Rel. Operacional</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="RelatoriosBookings">Rel. Bookings</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Contato">Fale conosco</a>
+                            </li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Conta" asp-action="ListarUsuarios">Usuários</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Configuracao" asp-action="Contato">Configuração de e-mail</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            var usuario = await UserManager.GetUserAsync(User);
+                            <li class="nav-item d-flex align-items-center">
+                                <span class="nav-link text-muted small py-0 mb-0">
+                                    @usuario?.NomeCompleto
+                                    @if (!string.IsNullOrEmpty(usuario?.ClienteNome))
+                                    {
+                                        <span class="badge bg-primary ms-1">@usuario.ClienteNome</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary ms-1">Admin</span>
+                                    }
+                                </span>
+                            </li>
+                            <li class="nav-item d-flex align-items-center">
+                                <a class="nav-link text-dark py-0 px-2" asp-controller="Conta" asp-action="AlterarMinhaSenha">Alterar senha</a>
+                            </li>
+                            <li class="nav-item d-flex align-items-center">
+                                <form asp-controller="Conta" asp-action="Logout" method="post" class="d-flex align-items-center">
+                                    <button type="submit" class="btn btn-link nav-link text-dark p-0 px-2 border-0">Sair</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Conta" asp-action="Login">Entrar</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container layout-main-wrap">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted footer-padrao layout-footer">
+        <div class="container d-flex align-items-center justify-content-center flex-wrap gap-2 py-3">
+            <img src="@Url.Content("~/images/LogoCesari.png")" alt="Grupo Cesari" title="Grupo Cesari" class="footer-logo-cesari" />
+            <span class="footer-texto">Célula Inovação - SI • Grupo Cesari — Versão 1.0.0 (Março 2026)</span>
+            <span class="opacity-75">|</span>
+            <a asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none">Privacidade</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,223 @@
+@using PortalCliente.Models
+@{
+    ViewData["Title"] = "Dashboard";
+    var ehAdmin = (bool)(ViewBag.EhAdmin ?? false);
+    var nomeCompleto = ViewBag.NomeCompleto as string ?? "Usuário";
+    var estoqueTotal = (int)(ViewBag.EstoqueTotal ?? 0);
+    var agLimpeza = (int)(ViewBag.AgLimpeza ?? 0);
+    var agReparo = (int)(ViewBag.AgReparo ?? 0);
+    var agInspecao = (int)(ViewBag.AgInspecao ?? 0);
+    var agEnvioEstimativa = (int)(ViewBag.AgEnvioEstimativa ?? 0);
+    var agOffHire = (int)(ViewBag.AgOffHire ?? 0);
+    var alertasDias = (int)(ViewBag.AlertasDias ?? 0);
+    var proximasLiberacoes = (int)(ViewBag.ProximasLiberacoes ?? 0);
+    var cliente = ViewBag.Cliente as string;
+    var produtosLabels = (ViewBag.ProdutosLabels as IEnumerable<string>) ?? Array.Empty<string>();
+    var produtosData = (ViewBag.ProdutosData as IEnumerable<int>) ?? Array.Empty<int>();
+    var porCliente = ViewBag.PorCliente as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var ultimaAtualizacao = ViewBag.UltimaAtualizacao as DateTime?;
+
+    var contexto = !ehAdmin ? "visão do seu estoque" : (string.IsNullOrWhiteSpace(cliente) ? "visão geral de todos os clientes" : "cliente: " + cliente);
+
+    var barValues = new[] { agLimpeza, agReparo, agInspecao, agEnvioEstimativa, agOffHire };
+    var barMax = barValues.Max();
+    if (barMax == 0) { barMax = 1; }
+    var barHeights = barValues.Select(v => (int)Math.Round((v * 100.0) / barMax)).ToArray();
+    var barCores = new[] { "#0d6efd", "#fd7e14", "#6f42c1", "#198754", "#6c757d" };
+    var barLabels = new[] { "Ag. Limpeza", "Ag. Reparo", "Ag. Inspeção", "Ag. Est.", "Off Hire" };
+
+    var produtosList = produtosLabels.Zip(produtosData, (l, d) => new { Label = l, Total = d }).ToList();
+    var donutCores = new[] { "#0d6efd", "#198754", "#fd7e14", "#6f42c1", "#dc3545", "#ffc107" };
+
+    var dispReservados = (int)(ViewBag.DisponibilidadeReservados ?? 0);
+    var dispEmManutencao = (int)(ViewBag.DisponibilidadeEmManutencao ?? 0);
+    var dispDisponivel = (int)(ViewBag.DisponibilidadeDisponivel ?? 0);
+    var dispMax = new[] { dispReservados, dispEmManutencao, dispDisponivel }.DefaultIfEmpty(1).Max();
+}
+
+<div class="dashboard-mock">
+    <div class="dash-greeting">Olá, <strong>@nomeCompleto</strong> — @contexto</div>
+    <div class="dash-page-title">@(ehAdmin && string.IsNullOrWhiteSpace(cliente) ? "Dashboard" : "Seu dashboard")</div>
+    <div class="dash-page-sub">@(ultimaAtualizacao.HasValue ? "Atualizado em " + ultimaAtualizacao.Value.ToString("dd/MM/yyyy HH:mm") : "")</div>
+
+    <!-- Cards -->
+    <div class="cards-row">
+        <div class="card-mock total"><div class="label">Total</div><div class="value">@estoqueTotal</div></div>
+        <div class="card-mock limpeza"><div class="label">Ag. Limpeza</div><div class="value">@agLimpeza</div></div>
+        <div class="card-mock reparo"><div class="label">Ag. Reparo</div><div class="value">@agReparo</div></div>
+        <div class="card-mock inspecao"><div class="label">Ag. Inspeção</div><div class="value">@agInspecao</div></div>
+        <div class="card-mock estimativa"><div class="label">Ag. Estimativa</div><div class="value">@agEnvioEstimativa</div></div>
+        <div class="card-mock offhire"><div class="label">Ag. Off Hire</div><div class="value">@agOffHire</div></div>
+    </div>
+
+    <!-- Linha 1: Gráfico barras (apenas; cards já mostram os totais) -->
+    <div class="row-2 row-2-single">
+        <div class="panel">
+            <div class="panel-title">@(ehAdmin ? "Estoque por etapa" : "Seu estoque por etapa")</div>
+            <div class="bar-chart">
+                @for (var i = 0; i < 5; i++)
+                {
+                    <div class="bar-wrap">
+                        <div class="bar" style="height:@(barHeights[i])%;background:@barCores[i];"></div>
+                        <div class="bar-label">@barLabels[i]</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Linha 2: Rosca + Tabela clientes -->
+    <div class="row-2b">
+        <div class="panel">
+            <div class="panel-title">Por produto</div>
+            <div class="d-flex align-items-center gap-3">
+                <div style="position:relative; height:200px; width:200px; flex-shrink:0;">
+                    <canvas id="chartPorProduto"></canvas>
+                </div>
+                <div class="flex-grow-1">
+                    <table class="table table-sm mb-0" style="font-size:13px;">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-center">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in produtosList)
+                            {
+                                var pct = estoqueTotal > 0 ? Math.Round((double)p.Total / (double)estoqueTotal * 100) : 0;
+                                <tr>
+                                    <td>@p.Label</td>
+                                    <td class="text-center"><strong>@p.Total</strong></td>
+                                    <td class="text-center text-muted">@pct%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            @if (ehAdmin)
+            {
+                <div class="panel-title">Por cliente (Admin)</div>
+                @if (porCliente.Any())
+                {
+                    <table class="table-mock">
+                        <thead><tr><th>Cliente</th><th>Total</th><th>Limpeza</th><th>Reparo</th><th>Inspeção</th><th>Parados ≥10d</th></tr></thead>
+                        <tbody>
+                            @foreach (dynamic x in porCliente)
+                            {
+                                var lista = (x.Lista as IEnumerable<Container>)?.ToList() ?? new List<Container>();
+                                var limpeza = lista.Count(c => c.Status == "Ag. Limpeza");
+                                var reparo = lista.Count(c => c.Status == "Ag. Reparo");
+                                var inspecao = lista.Count(c => c.Status == "Ag. Inspeção");
+                                var parados = lista.Count(c => (c.DiasNoStatus ?? 0) >= 10);
+                                <tr>
+                                    <td><strong>@x.Cliente</strong></td>
+                                    <td>@x.Total</td>
+                                    <td>@limpeza</td>
+                                    <td>@reparo</td>
+                                    <td>@inspecao</td>
+                                    <td>
+                                        @if (parados > 0) { <span class="badge-danger">@parados</span> }
+                                        else { <span class="badge-success">0</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">Nenhum cliente com dados.</p>
+                }
+            }
+            else
+            {
+                <div class="panel-title text-uppercase">Disponibilidade de estoque (saldo)</div>
+                <div class="d-flex align-items-center justify-content-between gap-3 mt-2">
+                    <div class="flex-grow-1">
+                        <div class="disponibilidade-bars">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="disponibilidade-label me-2" style="min-width: 140px;">Reservados (Booking)</span>
+                                <div class="flex-grow-1" style="max-width: 200px;">
+                                    <div class="progress" style="height: 22px; background: #e9ecef;">
+                                        <div class="progress-bar" role="progressbar" style="width: @(dispMax > 0 ? (dispReservados * 100.0 / dispMax) : 0)%; background: #0d6efd;" aria-valuenow="@dispReservados" aria-valuemin="0" aria-valuemax="@dispMax">@dispReservados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="disponibilidade-label me-2" style="min-width: 140px;">Em manutenção</span>
+                                <div class="flex-grow-1" style="max-width: 200px;">
+                                    <div class="progress" style="height: 22px; background: #e9ecef;">
+                                        <div class="progress-bar" role="progressbar" style="width: @(dispMax > 0 ? (dispEmManutencao * 100.0 / dispMax) : 0)%; background: #fd7e14;" aria-valuenow="@dispEmManutencao" aria-valuemin="0" aria-valuemax="@dispMax">@dispEmManutencao</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="disponibilidade-label me-2" style="min-width: 140px;">Disponível (Livre)</span>
+                                <div class="flex-grow-1" style="max-width: 200px;">
+                                    <div class="progress" style="height: 22px; background: #e9ecef;">
+                                        <div class="progress-bar" role="progressbar" style="width: @(dispMax > 0 ? (dispDisponivel * 100.0 / dispMax) : 0)%; background: #198754;" aria-valuenow="@dispDisponivel" aria-valuemin="0" aria-valuemax="@dispMax">@dispDisponivel</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-none d-md-block flex-shrink-0 align-self-center">
+                        <img src="~/images/isotanks-rack-logo.svg" alt="Isotanks empilhados" style="height: 240px; opacity: 0.92;" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Linha 3: Alertas + Liberações -->
+    <div class="row-2c">
+        <div class="alert-block">
+            <div class="ab-title">⚠ @(ehAdmin ? "Isotanks" : "Seus isotanques") parados ≥ 10 dias</div>
+            <div class="ab-num">@alertasDias</div>
+            <div class="ab-sub"><a asp-action="Alertas" class="text-decoration-none fw-semibold" style="color:#8B1A1A">Ver alertas críticos →</a></div>
+        </div>
+        <div class="release-block">
+            <div class="rb-title">📅 @(ehAdmin ? "Próximas liberações" : "Suas próximas liberações") (7 dias)</div>
+            <div class="rb-num">@proximasLiberacoes</div>
+            <div class="rb-sub"><a asp-action="Index" asp-route-proximos="7" class="text-decoration-none fw-semibold" style="color:#198754">Ver isotanks com previsão →</a></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            var produtoLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(produtosList.Select(p => p.Label).ToList()));
+            var produtoData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(produtosList.Select(p => p.Total).ToList()));
+            var cores = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#dc3545', '#ffc107'];
+            var ctx = document.getElementById('chartPorProduto');
+            if (ctx && produtoLabels.length && typeof Chart !== 'undefined') {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: produtoLabels,
+                        datasets: [{
+                            data: produtoData,
+                            backgroundColor: produtoData.map(function(_, i) { return cores[i % cores.length]; }),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        cutout: '55%'
+                    }
+                });
+            }
+        })();
+    </script>
+}

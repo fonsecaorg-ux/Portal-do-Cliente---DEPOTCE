@@ -1,0 +1,103 @@
+@model PortalCliente.Models.ConfiguracaoContato
+@{
+    ViewData["Title"] = "Configuração de e-mail";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Isotanques</a></li>
+        <li class="breadcrumb-item active">Configuração de e-mail</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-6 mb-0">Configuração de e-mail e contato</h1>
+</div>
+
+@if (TempData["ConfigSucesso"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["ConfigSucesso"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<p class="text-muted mb-4">Estas configurações são usadas na página <strong>Fale conosco</strong> e no envio de e-mails pelo portal.</p>
+
+<form asp-action="Contato" method="post" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Contato exibido ao cliente</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="EmailDestino" class="form-label">E-mail de destino</label>
+                    <input asp-for="EmailDestino" class="form-control" type="email" placeholder="contato@empresa.com" />
+                    <span asp-validation-for="EmailDestino" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="WhatsAppNumero" class="form-label">WhatsApp (número com DDI)</label>
+                    <input asp-for="WhatsAppNumero" class="form-control" placeholder="5511999999999" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="NomeEquipe" class="form-label">Nome da equipe (ex.: Depotce)</label>
+                    <input asp-for="NomeEquipe" class="form-control" placeholder="Depotce" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">SMTP (envio de e-mails pelo portal)</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label asp-for="SmtpHost" class="form-label">Servidor SMTP</label>
+                    <input asp-for="SmtpHost" class="form-control" placeholder="smtp.empresa.com" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="SmtpPort" class="form-label">Porta</label>
+                    <input asp-for="SmtpPort" class="form-control" type="number" min="1" max="65535" />
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="SmtpEnableSsl" class="form-check-input" />
+                        <label asp-for="SmtpEnableSsl" class="form-check-label">Usar SSL/TLS</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SmtpUser" class="form-label">Usuário SMTP</label>
+                    <input asp-for="SmtpUser" class="form-control" type="email" placeholder="noreply@empresa.com" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SmtpPassword" class="form-label">Senha SMTP</label>
+                    <input name="SmtpPassword" class="form-control" type="password" placeholder="Deixe em branco para não alterar" autocomplete="new-password" />
+                    <small class="text-muted">Deixe em branco para manter a senha atual.</small>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FromEmail" class="form-label">E-mail remetente (From)</label>
+                    <input asp-for="FromEmail" class="form-control" type="email" placeholder="noreply@empresa.com" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FromName" class="form-label">Nome remetente (From)</label>
+                    <input asp-for="FromName" class="form-control" placeholder="Portal do Cliente Depotce" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Salvar configurações</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

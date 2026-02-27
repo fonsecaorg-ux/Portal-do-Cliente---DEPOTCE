@@ -1,0 +1,349 @@
+@{
+    ViewData["Title"] = "Relatórios BI";
+    var ehAdmin = ViewBag.EhAdmin as bool? ?? false;
+    var clienteNome = ViewBag.ClienteNome as string;
+    var ultimaAtualizacao = ViewBag.UltimaAtualizacao as DateTime? ?? DateTime.Now;
+}
+
+<h1 class="display-6 d-flex align-items-center gap-2">
+    <span class="fs-4">📊</span> Relatórios BI
+</h1>
+<p class="text-muted mb-2">
+    @if (ehAdmin)
+    { <span>Visão analítica do estoque de Isotanks — todos os clientes — Atualizado em @ultimaAtualizacao.ToString("dd/MM/yyyy HH:mm")</span> }
+    else
+    { <span>Visão analítica do <strong>seu</strong> estoque de Isotanks@(string.IsNullOrEmpty(clienteNome) ? "" : $" ({clienteNome})") — Atualizado em @ultimaAtualizacao.ToString("dd/MM/yyyy HH:mm")</span> }
+</p>
+<div class="d-flex justify-content-end mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">← Voltar</a>
+</div>
+
+@{
+    var filtroCliente = ViewBag.FiltroCliente as string;
+    var filtroStatusRel = ViewBag.FiltroStatus as string;
+    var dictCliente = ViewBag.TotalPorCliente as System.Collections.Generic.Dictionary<string, int>;
+    var dictStatusRel = ViewBag.TotalPorStatus as System.Collections.Generic.Dictionary<string, int>;
+}
+@* Filtros *@
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Relatorios" class="row g-2 align-items-end flex-wrap">
+            @if (ehAdmin)
+            {
+                <div class="col-auto">
+                    <label class="form-label small mb-0">CLIENTE</label>
+                    <select name="cliente" class="form-select form-select-sm" style="min-width: 160px;">
+                        <option value="">Todos</option>
+                        @foreach (var kv in dictCliente ?? new System.Collections.Generic.Dictionary<string, int>())
+                        {
+                            if (kv.Key == filtroCliente)
+                            { <option value="@kv.Key" selected>@kv.Key</option> }
+                            else
+                            { <option value="@kv.Key">@kv.Key</option> }
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-auto">
+                <label class="form-label small mb-0">STATUS</label>
+                <select name="status" class="form-select form-select-sm" style="min-width: 160px;">
+                    <option value="">Todos</option>
+                    @foreach (var kv in dictStatusRel ?? new System.Collections.Generic.Dictionary<string, int>())
+                    {
+                        if (kv.Key == filtroStatusRel)
+                        { <option value="@kv.Key" selected>@kv.Key</option> }
+                        else
+                        { <option value="@kv.Key">@kv.Key</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-danger btn-sm">Aplicar filtros</button>
+            </div>
+            <div class="col-auto">
+                <a asp-action="ExportarExcel" asp-controller="Home" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener">📥 Exportar Excel</a>
+            </div>
+            <div class="col-auto">
+                <a asp-action="ExportarRelatoriosPdf" asp-controller="Home" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener">🖨 Gerar PDF</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* 4 cards de insight *@
+@{
+    var tempoMedioGeral = ViewBag.TempoMedioGeral;
+    var maiorTempoCodigo = ViewBag.MaiorTempoCodigo as string ?? "";
+    var maiorTempoCliente = ViewBag.MaiorTempoCliente as string ?? "";
+    var maiorTempoDias = ViewBag.MaiorTempoDias as int? ?? 0;
+    var liberacoesMes = ViewBag.LiberacoesMes as int? ?? 0;
+    var taxaReparo = ViewBag.TaxaReparo;
+    var dictStatus = ViewBag.TotalPorStatus as System.Collections.Generic.Dictionary<string, int>;
+    var totalGeral = dictStatus?.Values.Sum() ?? 0;
+    var emReparo = dictStatus?.GetValueOrDefault("Ag. Reparo") ?? 0;
+}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-1">Tempo médio no pátio</h6>
+                <p class="fs-4 fw-bold mb-0">@(tempoMedioGeral ?? 0) dias</p>
+                <p class="small text-muted mb-0">@(ehAdmin ? "média geral todos os clientes" : "sua média / seu estoque")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-1">@(ehAdmin ? "Maior tempo parado" : "Seu maior tempo parado")</h6>
+                <p class="fs-4 fw-bold mb-0" id="maiorTempoValor">@maiorTempoDias dias</p>
+                <p class="small text-muted mb-0" id="maiorTempoDetalhe">@maiorTempoCodigo@(ehAdmin ? $" — {maiorTempoCliente}" : "")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-1">@(ehAdmin ? "Liberações no mês" : "Suas liberações no mês")</h6>
+                <p class="fs-4 fw-bold mb-0">@liberacoesMes</p>
+                <p class="small text-muted mb-0">@(ehAdmin ? "Isotanks com previsão de liberação no mês" : "Seus isotanques com previsão no mês")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase mb-1">@(ehAdmin ? "Taxa de reparo" : "Sua taxa de reparo")</h6>
+                <p class="fs-4 fw-bold mb-0">@(taxaReparo ?? 0)%</p>
+                <p class="small text-muted mb-0">@emReparo de @totalGeral @(ehAdmin ? "Isotanks em reparo" : "dos seus isotanques em reparo")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Linha 1 — Barras (por status); Doughnut (por cliente) só para Admin *@
+<div class="row g-4 mb-4">
+    <div class="@(ehAdmin ? "col-lg-6" : "col-12")">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">@(ehAdmin ? "Isotanks por Status" : "Seus isotanques por status")</h5>
+                    <p class="small text-muted mb-0">@(ehAdmin ? "Distribuição atual do estoque por etapa operacional" : "Distribuição do seu estoque por etapa")</p>
+                </div>
+                <span class="badge bg-secondary" id="totalStatusBadge">0 total</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chartPorStatus" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    @if (ehAdmin)
+    {
+    <div class="col-lg-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Distribuição por Cliente</h5>
+                    <p class="small text-muted mb-0">Percentual de Isotanks por cliente no pátio</p>
+                </div>
+                <span class="badge bg-secondary" id="totalClienteBadge">0 clientes</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chartPorCliente" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+@* Linha 2 — Linhas (entradas x saídas) + Tabela tempo médio por etapa *@
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">@(ehAdmin ? "Movimentações Mensais" : "Suas movimentações mensais")</h5>
+                <p class="small text-muted mb-0">@(ehAdmin ? "Entradas e saídas de Isotanks nos últimos 6 meses" : "Entradas e saídas dos seus isotanques nos últimos 6 meses")</p>
+            </div>
+            <div class="card-body">
+                <canvas id="chartMovimentacoes" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">@(ehAdmin ? "Tempo Médio por Etapa" : "Seu tempo médio por etapa")</h5>
+                <p class="small text-muted mb-0">Dias médios que @(ehAdmin ? "um Isotank" : "seus isotanques") permanecem em cada status</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ETAPA</th>
+                                <th>TEMPO MÉDIO</th>
+                                <th style="min-width: 140px;">PROPORÇÃO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyTempoEtapa">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Linha 3 — Barras (dias no status): para Admin = comparativo entre clientes; para Cliente = seus dias por etapa *@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0">@(ehAdmin ? "Dias no Status por Cliente" : "Seus dias no status por etapa")</h5>
+                <p class="small text-muted mb-0">@(ehAdmin ? "Comparativo de tempo médio parado por etapa entre clientes" : "Tempo médio que seus isotanques permanecem em cada etapa")</p>
+            </div>
+            <div class="card-body">
+                <canvas id="chartDiasPorCliente" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function () {
+    var coresStatus = {
+        'Ag. Limpeza': '#0d6efd',
+        'Ag. Reparo': '#fd7e14',
+        'Ag. Inspeção': '#6f42c1',
+        'Ag. Envio Estimativa': '#198754',
+        'Ag. Off Hire': '#6c757d',
+        'Depotce primária': '#8B1A1A',
+        'Cesari': '#2B3A7A'
+    };
+    var coresCliente = ['#2B3A7A', '#0d6efd', '#6f42c1', '#198754', '#fd7e14', '#6c757d'];
+
+    var ehAdmin = @(ehAdmin ? "true" : "false");
+    var totalPorStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TotalPorStatus ?? new Dictionary<string, int>()));
+    var totalPorCliente = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TotalPorCliente ?? new Dictionary<string, int>()));
+    var tempoMedioPorStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TempoMedioPorStatus ?? new Dictionary<string, double>()));
+    var movLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.MovimentacoesMensaisLabels ?? new List<string>()));
+    var movEntradas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.MovimentacoesMensaisEntradas ?? new List<int>()));
+    var movSaidas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.MovimentacoesMensaisSaidas ?? new List<int>()));
+    var statusesOrdenados = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.StatusesOrdenados ?? Array.Empty<string>()));
+    var clientesOrdenados = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ClientesOrdenados ?? new List<string>()));
+    var diasMedioPorClienteEStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DiasMedioPorClienteEStatus ?? new Dictionary<string, Dictionary<string, double>>()));
+
+    var labelsStatus = Object.keys(totalPorStatus);
+    var dataStatus = labelsStatus.map(function(k) { return totalPorStatus[k]; });
+    var coresStatusArr = labelsStatus.map(function(k) { return coresStatus[k] || '#6c757d'; });
+    var totalGeralStatus = dataStatus.reduce(function(a, b) { return a + b; }, 0);
+    document.getElementById('totalStatusBadge').textContent = totalGeralStatus + ' total';
+
+    new Chart(document.getElementById('chartPorStatus'), {
+        type: 'bar',
+        data: {
+            labels: labelsStatus,
+            datasets: [{
+                label: 'Isotanks',
+                data: dataStatus,
+                backgroundColor: coresStatusArr,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    if (ehAdmin) {
+        var labelsCliente = Object.keys(totalPorCliente);
+        var dataCliente = labelsCliente.map(function(k) { return totalPorCliente[k]; });
+        var coresClienteArr = labelsCliente.map(function(_, i) { return coresCliente[i % coresCliente.length]; });
+        var elBadge = document.getElementById('totalClienteBadge');
+        if (elBadge) elBadge.textContent = labelsCliente.length + ' clientes';
+        var elChart = document.getElementById('chartPorCliente');
+        if (elChart) {
+            new Chart(elChart, {
+                type: 'doughnut',
+                data: {
+                    labels: labelsCliente,
+                    datasets: [{ data: dataCliente, backgroundColor: coresClienteArr, borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    }
+
+    new Chart(document.getElementById('chartMovimentacoes'), {
+        type: 'line',
+        data: {
+            labels: movLabels,
+            datasets: [
+                { label: 'Entradas', data: movEntradas, borderColor: '#2B3A7A', backgroundColor: 'rgba(43,58,122,0.1)', fill: true, tension: 0.3 },
+                { label: 'Saídas', data: movSaidas, borderColor: '#8B1A1A', backgroundColor: 'rgba(139,26,26,0.1)', fill: true, tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    var maxDias = Math.max.apply(null, Object.values(tempoMedioPorStatus).filter(Number)) || 1;
+    var tbody = document.getElementById('tbodyTempoEtapa');
+    var ordemEtapa = ['Ag. Limpeza', 'Ag. Reparo', 'Ag. Inspeção', 'Ag. Envio Estimativa', 'Ag. Off Hire'];
+    ordemEtapa.forEach(function(st) {
+        var dias = tempoMedioPorStatus[st];
+        if (dias === undefined) return;
+        var pct = maxDias > 0 ? (dias / maxDias * 100) : 0;
+        var cor = coresStatus[st] || '#6c757d';
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + st + '</td><td>' + Math.round(dias) + ' dias</td><td><div class="progress" style="height: 1.2rem;"><div class="progress-bar" role="progressbar" style="width:' + pct + '%; background-color:' + cor + ';" aria-valuenow="' + dias + '" aria-valuemin="0" aria-valuemax="' + maxDias + '"></div></div><span class="small ms-1">' + Math.round(dias) + 'd</span></td>';
+        tbody.appendChild(tr);
+    });
+
+    var datasetsCliente = clientesOrdenados.map(function(cli, i) {
+        var vals = statusesOrdenados.map(function(st) { return diasMedioPorClienteEStatus[cli] && diasMedioPorClienteEStatus[cli][st] !== undefined ? diasMedioPorClienteEStatus[cli][st] : 0; });
+        return {
+            label: cli,
+            data: vals,
+            backgroundColor: coresCliente[i % coresCliente.length]
+        };
+    });
+    var labelsEixoX = statusesOrdenados.map(function(s) { return s === 'Ag. Envio Estimativa' ? 'Ag. Envio Est.' : s; });
+
+    new Chart(document.getElementById('chartDiasPorCliente'), {
+        type: 'bar',
+        data: {
+            labels: labelsEixoX,
+            datasets: datasetsCliente
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Dias' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+})();
+</script>

@@ -1,0 +1,354 @@
+/* ============================================
+   Portal do Cliente — Depotce
+   Paleta: vermelho #8B1C1C / dark #1E1E1E
+   ============================================ */
+
+   /* Fonte corporativa padrão Microsoft: Segoe UI */
+   :root {
+    --font-microsoft: 'Segoe UI', 'Segoe UI Variable', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --bs-body-font-family: var(--font-microsoft);
+    --bs-font-sans-serif: var(--font-microsoft);
+    --depotce-red:        #8B1C1C;
+    --depotce-red-dark:   #6B1414;
+    --depotce-red-hover:  #A52525;
+    --depotce-dark:       #1E1E1E;
+    --depotce-dark-soft:  #2C2C2C;
+    --depotce-bg:         #F4F4F4;
+    --depotce-bg-card:    #FFFFFF;
+    --depotce-border:     #E2E2E2;
+    --depotce-text:       #1E1E1E;
+    --depotce-muted:      #757575;
+  
+    --status-off-hire:   #6C757D;
+    --status-estimativa: #D97706;
+    --status-limpeza:    #1D6FA4;
+    --status-reparo:     #B91C1C;
+    --status-inspecao:   #0F766E;
+  }
+  
+  /* ── Body (Segoe UI = padrão Microsoft) ── */
+  html, body {
+    font-family: var(--font-microsoft);
+    background-color: var(--depotce-bg);
+    color: var(--depotce-text);
+    font-size: 0.9375rem;
+  }
+  
+  /* ── Navbar ── */
+  a.navbar-brand {
+    white-space: normal;
+  }
+  .navbar-depotce {
+    background-color: var(--depotce-dark) !important;
+    border-bottom: 3px solid var(--depotce-red);
+    padding: 0.5rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  
+  .navbar-depotce .navbar-brand img {
+    height: 40px;
+    width: auto;
+  }
+  
+  .navbar-depotce .nav-link {
+    color: rgba(255,255,255,0.80) !important;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.9rem !important;
+    border-radius: 4px;
+    transition: all 0.18s;
+    letter-spacing: 0.02em;
+  }
+  
+  .navbar-depotce .nav-link:hover {
+    color: #FFFFFF !important;
+    background-color: rgba(255,255,255,0.07);
+  }
+  
+  .navbar-depotce .nav-link.nav-active {
+    color: #FFFFFF !important;
+    border-bottom: 2px solid var(--depotce-red);
+  }
+  
+  /* Indicador MBM/Local */
+  .badge-origem {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+  .badge-mbm {
+    background: rgba(34,197,94,0.15);
+    color: #4ADE80;
+    border: 1px solid rgba(34,197,94,0.25);
+  }
+  .badge-local {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  
+  /* ── Dashboard cards ── */
+  .dash-card {
+    background: var(--depotce-bg-card);
+    border: 1px solid var(--depotce-border);
+    border-radius: 8px;
+    padding: 1.1rem 1.4rem;
+    height: 100%;
+    transition: box-shadow 0.2s;
+  }
+  .dash-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.07); }
+  
+  .dash-card .dc-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--depotce-muted);
+    margin-bottom: 0.4rem;
+  }
+  .dash-card .dc-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+  .dash-card .dc-desc {
+    font-size: 0.78rem;
+    color: var(--depotce-muted);
+  }
+  
+  .dc-red     .dc-value { color: var(--depotce-red); }
+  .dc-warning .dc-value { color: #D97706; }
+  .dc-danger  .dc-value { color: #B91C1C; }
+  .dc-success .dc-value { color: #15803D; }
+  .dc-info    .dc-value { color: #1D6FA4; }
+  .dc-danger.dash-card  { border-left: 4px solid #B91C1C; }
+  
+  /* ── Status breakdown ── */
+  .status-breakdown {
+    background: var(--depotce-bg-card);
+    border: 1px solid var(--depotce-border);
+    border-radius: 8px;
+    padding: 1.1rem 1.4rem;
+    height: 100%;
+  }
+  .sb-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--depotce-muted);
+    margin-bottom: 0.8rem;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--depotce-border);
+    font-size: 0.855rem;
+  }
+  .sb-item:last-child { border-bottom: none; }
+  .sb-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+  }
+  .sb-count { font-weight: 700; font-size: 0.95rem; min-width: 20px; text-align: right; }
+  
+  /* Status colors */
+  .sc-off-hire   { background: var(--status-off-hire); }
+  .sc-estimativa { background: var(--status-estimativa); }
+  .sc-limpeza    { background: var(--status-limpeza); }
+  .sc-reparo     { background: var(--status-reparo); }
+  .sc-inspecao   { background: var(--status-inspecao); }
+  
+  /* ── Filter card ── */
+  .filter-card {
+    background: var(--depotce-bg-card);
+    border: 1px solid var(--depotce-border);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* ── Table ── */
+  .table-portal {
+    background: var(--depotce-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--depotce-border);
+    overflow: hidden;
+  }
+  .table-portal table { margin-bottom: 0; }
+  
+  .table-portal thead th {
+    background: #F7F7F7;
+    border-bottom: 2px solid var(--depotce-border);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--depotce-muted);
+    padding: 0.8rem 1rem;
+    white-space: nowrap;
+  }
+  .table-portal thead th a {
+    color: var(--depotce-muted) !important;
+    text-decoration: none;
+  }
+  .table-portal thead th a:hover { color: var(--depotce-red) !important; }
+  
+  .table-portal tbody td {
+    padding: 0.8rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--depotce-border);
+    font-size: 0.875rem;
+  }
+  .table-portal tbody tr:hover   { background: #FAFAFA; }
+  .table-portal tbody tr:last-child td { border-bottom: none; }
+  
+  .codigo-mono {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 0.83rem;
+    color: var(--depotce-dark-soft);
+    letter-spacing: 0.02em;
+  }
+  
+  /* ── Status badge ── */
+  .badge-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.28rem 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .bs-off-hire   { background: rgba(108,117,125,0.10); color: var(--status-off-hire); }
+  .bs-estimativa { background: rgba(217,119,6,0.10);   color: var(--status-estimativa); }
+  .bs-limpeza    { background: rgba(29,111,164,0.10);  color: var(--status-limpeza); }
+  .bs-reparo     { background: rgba(185,28,28,0.10);   color: var(--status-reparo); }
+  .bs-inspecao   { background: rgba(15,118,110,0.10);  color: var(--status-inspecao); }
+  
+  /* ── Dias badge ── */
+  .badge-dias {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.22rem 0.55rem;
+    border-radius: 20px;
+  }
+  .bd-ok     { background: #DCFCE7; color: #15803D; }
+  .bd-medio  { background: #FEF3C7; color: #92400E; }
+  .bd-alto   { background: #FEE2E2; color: #991B1B; }
+  
+  /* ── Buttons ── */
+  .btn-depotce {
+    background-color: var(--depotce-red);
+    border-color: var(--depotce-red);
+    color: #FFF;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .btn-depotce:hover, .btn-depotce:focus {
+    background-color: var(--depotce-red-dark);
+    border-color: var(--depotce-red-dark);
+    color: #FFF;
+  }
+  .btn-outline-depotce {
+    color: var(--depotce-red);
+    border-color: var(--depotce-red);
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  .btn-outline-depotce:hover {
+    background-color: var(--depotce-red);
+    color: #FFF;
+  }
+  
+  /* ── Footer ── */
+  .footer-depotce {
+    background-color: var(--depotce-dark);
+    border-top: 3px solid var(--depotce-red);
+    color: rgba(255,255,255,0.45);
+    font-size: 0.78rem;
+    padding: 0.85rem 0;
+    margin-top: 3rem;
+  }
+  .footer-depotce a {
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+  }
+  .footer-depotce a:hover { color: var(--depotce-red); }
+  
+  /* ── Pagination ── */
+  .pagination .page-link {
+    color: var(--depotce-red);
+    border-color: var(--depotce-border);
+    font-size: 0.875rem;
+  }
+  .pagination .page-item.active .page-link {
+    background-color: var(--depotce-red);
+    border-color: var(--depotce-red);
+    color: #FFF;
+  }
+  .pagination .page-link:hover {
+    color: var(--depotce-red-dark);
+    background-color: #F9F9F9;
+  }
+  
+  /* ── Detail page ── */
+  .detail-section {
+    background: var(--depotce-bg-card);
+    border: 1px solid var(--depotce-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .detail-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--depotce-muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--depotce-border);
+  }
+  .detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--depotce-muted);
+    margin-bottom: 0.2rem;
+  }
+  .detail-value {
+    font-size: 0.9375rem;
+    color: var(--depotce-text);
+    font-weight: 500;
+  }
+  
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    padding: 0;
+    background: transparent;
+    font-size: 0.8rem;
+  }
+  .breadcrumb-item a { color: var(--depotce-red); text-decoration: none; }
+  .breadcrumb-item + .breadcrumb-item::before { color: var(--depotce-muted); }
+  
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .dash-card .dc-value { font-size: 1.6rem; }
+    .table-portal thead th:nth-child(3),
+    .table-portal tbody td:nth-child(3) { display: none; }
+  }
+  ```
+  
+  ---
+  ```
+  // ARQUIVO: Views/Shared/_Layout.cshtml
+  // AÇÃO: substituir arquivo completo

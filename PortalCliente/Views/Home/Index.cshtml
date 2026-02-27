@@ -1,0 +1,363 @@
+@model List<PortalCliente.Models.Container>
+@{
+    ViewData["Title"] = "Isotanques";
+
+    var estoqueTotal       = (int)(ViewBag.EstoqueTotal       ?? 0);
+    var busca              = ViewBag.Busca    as string;
+    var cliente            = ViewBag.Cliente  as string;
+    var status             = ViewBag.Status   as string;
+    var ordenarPor         = ViewBag.OrdenarPor as string ?? "Codigo";
+    var ordemAsc           = (bool)(ViewBag.OrdemAsc          ?? true);
+    var clientes           = ViewBag.Clientes as List<string>  ?? new List<string>();
+    var statusList         = (ViewBag.StatusList as IEnumerable<string>) ?? Array.Empty<string>();
+    var paginaAtual        = (int)(ViewBag.PaginaAtual        ?? 1);
+    var totalPaginas       = (int)(ViewBag.TotalPaginas       ?? 1);
+    var totalItens         = (int)(ViewBag.TotalItens         ?? 0);
+    var itensPorPagina     = (int)(ViewBag.ItensPorPagina     ?? 20);
+    var porStatus          = ViewBag.PorStatus as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var alertasDias        = (int)(ViewBag.AlertasDias        ?? 0);
+    var proximasLiberacoes = (int)(ViewBag.ProximasLiberacoes ?? 0);
+    var aguardandoAcao     = (int)(ViewBag.AguardandoAcao     ?? 0);
+    var proximosDias       = ViewBag.ProximosDias as int?;
+    var statusSelecionados = (ViewBag.StatusSelecionados as List<string>) ?? new List<string>();
+
+    string SortOrder(string col) =>
+        (col == ordenarPor ? !ordemAsc : true).ToString().ToLowerInvariant();
+    int InicioPagina() => totalItens == 0 ? 0 : (paginaAtual - 1) * itensPorPagina + 1;
+    int FimPagina()    => Math.Min(paginaAtual * itensPorPagina, totalItens);
+
+    string StatusBadge(string s) => s switch {
+        "Ag. Off Hire"         => "bs-off-hire",
+        "Ag. Envio Estimativa" => "bs-estimativa",
+        "Ag. Limpeza"          => "bs-limpeza",
+        "Ag. Reparo"           => "bs-reparo",
+        "Ag. Inspeção"         => "bs-inspecao",
+        _                      => "bg-secondary"
+    };
+
+    string StatusDot(string s) => s switch {
+        "Ag. Off Hire"         => "sc-off-hire",
+        "Ag. Envio Estimativa" => "sc-estimativa",
+        "Ag. Limpeza"          => "sc-limpeza",
+        "Ag. Reparo"           => "sc-reparo",
+        "Ag. Inspeção"         => "sc-inspecao",
+        _                      => "bg-secondary"
+    };
+
+    string DiasBadge(int d) => d == 0 ? "bd-ok" : d >= 15 ? "bd-alto" : d >= 8 ? "bd-medio" : "bd-ok";
+
+    var statusOrdem = new[] {
+        "Ag. Off Hire", "Ag. Envio Estimativa", "Ag. Limpeza", "Ag. Reparo", "Ag. Inspeção"
+    };
+    var somaPorEtapa = statusOrdem.Sum(s => porStatus.ContainsKey(s) ? porStatus[s] : 0);
+    var outrosStatus = porStatus.Keys.Where(k => k != null && !statusOrdem.Contains(k)).ToList();
+    var totalOutros = outrosStatus.Sum(k => porStatus[k]);
+    // Total = soma exata do breakdown "Por etapa" (inclui "Outros" se houver)
+    var totalExibido = somaPorEtapa + totalOutros;
+    var ehAdmin = ViewBag.EhAdmin as bool? ?? false;
+}
+
+<!-- Cabeçalho -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="fw-bold mb-1" style="font-size:1.5rem">@(ehAdmin && string.IsNullOrWhiteSpace(cliente) ? "Consulta de Isotanques" : "Seus Isotanques")</h1>
+        <p class="text-muted mb-0" style="font-size:0.85rem">
+            @if (ehAdmin && !string.IsNullOrWhiteSpace(cliente))
+            { <span>Visualizando como: <strong>@cliente</strong> · informações do MBM</span> }
+            else if (ehAdmin)
+            { <span>Todos os clientes · informações originadas do MBM</span> }
+            else
+            { <span>Informações originadas do MBM</span> }
+        </p>
+    </div>
+</div>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+        @TempData["Mensagem"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (proximosDias.HasValue && proximosDias.Value > 0)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        Exibindo apenas isotanks com <strong>previsão de liberação nos próximos @proximosDias dias</strong>.
+        <a asp-action="Index" asp-route-cliente="@cliente" asp-route-status="@status" asp-route-busca="@busca" class="alert-link ms-2">Ver todos</a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Dashboard -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="dash-card dc-red">
+            <div class="dc-label">Total</div>
+            <div class="dc-value">@totalExibido</div>
+            <div class="dc-desc">isotanques</div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="status-breakdown">
+            <div class="sb-title">Por etapa</div>
+            @foreach (var s in statusOrdem)
+            {
+                var cnt = porStatus.ContainsKey(s) ? porStatus[s] : 0;
+                <div class="sb-item">
+                    <span><span class="sb-dot @StatusDot(s)"></span>@s</span>
+                    <span class="sb-count">@cnt</span>
+                </div>
+            }
+            @if (totalOutros > 0)
+            {
+                <div class="sb-item">
+                    <span><span class="sb-dot bg-secondary"></span>Outros</span>
+                    <span class="sb-count">@totalOutros</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="dash-card dc-danger">
+            <div class="dc-label">⚠ Atenção</div>
+            <div class="dc-value">@alertasDias</div>
+            <div class="dc-desc">acima de 15 dias</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="dash-card dc-warning">
+            <div class="dc-label">Ag. Estimativa</div>
+            <div class="dc-value">@aguardandoAcao</div>
+            <div class="dc-desc">aguardando ação</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-sm-4 col-md-2">
+        <div class="dash-card dc-success">
+            <div class="dc-label">Liberações</div>
+            <div class="dc-value">@proximasLiberacoes</div>
+            <div class="dc-desc">próximos 7 dias</div>
+        </div>
+    </div>
+</div>
+<p class="small text-muted mb-0 mt-1">Total e Por etapa referem-se à mesma base (@totalExibido isotanques). Atenção, Ag. Estimativa e Liberações são indicadores e podem contar o mesmo isotank em mais de uma categoria.</p>
+
+<!-- Filtros -->
+<div class="filter-card">
+    <form method="get" asp-action="Index">
+        <input type="hidden" name="ordenarPor" value="@ordenarPor" />
+        <input type="hidden" name="ordemAsc"   value="@ordemAsc.ToString().ToLowerInvariant()" />
+        <input type="hidden" name="pagina"     value="1" />
+        <div class="row g-2 align-items-end">
+            @if (ehAdmin)
+            {
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Cliente</label>
+                <select name="cliente" class="form-select form-select-sm">
+                    <option value="">— Todos —</option>
+                    @foreach (var c in clientes)
+                    {
+                        if (c == cliente) { <option value="@c" selected>@c</option> }
+                        else              { <option value="@c">@c</option> }
+                    }
+                </select>
+            </div>
+            }
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-1">Etapa / Status (multipla escolha)</label>
+                <input type="hidden" name="status" id="statusVal" value="@(string.Join(",", statusSelecionados))" />
+                <div class="status-checkboxes border rounded p-2 bg-light" style="max-height: 90px; overflow-y: auto;">
+                    @foreach (var s in statusList)
+                    {
+                        var isChecked = statusSelecionados.Contains(s);
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input status-cb" type="checkbox" value="@s" id="st_@(s.Replace(" ", "_").Replace(".", "_"))" @(isChecked ? "checked" : "") />
+                            <label class="form-check-label small" for="st_@(s.Replace(" ", "_").Replace(".", "_"))">@s</label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Buscar</label>
+                <input type="text" name="busca" class="form-control form-control-sm"
+                       placeholder="Código ou produto..." value="@busca" />
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-depotce">Filtrar</button>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Limpar</a>
+            </div>
+        </div>
+        <script>
+            document.querySelector('.filter-card form').addEventListener('submit', function () {
+                var vals = Array.from(document.querySelectorAll('.status-cb:checked')).map(function (c) { return c.value; });
+                document.getElementById('statusVal').value = vals.join(',');
+            });
+        </script>
+    </form>
+</div>
+
+<!-- Tabela -->
+<div class="table-portal">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="Codigo"
+                       asp-route-ordemAsc="@SortOrder("Codigo")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Código @(ordenarPor == "Codigo" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="Produto"
+                       asp-route-ordemAsc="@SortOrder("Produto")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Produto @(ordenarPor == "Produto" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="Cliente"
+                       asp-route-ordemAsc="@SortOrder("Cliente")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Cliente @(ordenarPor == "Cliente" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="Status"
+                       asp-route-ordemAsc="@SortOrder("Status")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Etapa @(ordenarPor == "Status" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="PrevisaoLiberacao"
+                       asp-route-ordemAsc="@SortOrder("PrevisaoLiberacao")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Prev. Liberação @(ordenarPor == "PrevisaoLiberacao" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th>
+                    <a asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="DiasNoStatus"
+                       asp-route-ordemAsc="@SortOrder("DiasNoStatus")"
+                       asp-route-pagina="@paginaAtual" asp-route-itensPorPagina="@itensPorPagina">
+                        Dias @(ordenarPor == "DiasNoStatus" ? (ordemAsc ? "↑" : "↓") : "")
+                    </a>
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">
+                        Nenhum isotanque encontrado para os filtros informados.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><span class="codigo-mono">@item.Codigo</span></td>
+                        <td>@item.Produto</td>
+                        <td><span class="text-muted">@item.Cliente</span></td>
+                        <td><span class="badge-status @StatusBadge(item.Status)">@item.Status</span></td>
+                        <td>@(item.PrevisaoLiberacao?.ToString("dd/MM/yyyy") ?? "–")</td>
+                        <td>
+                            @if (item.DiasNoStatus.HasValue)
+                            {
+                                var d = item.DiasNoStatus.Value;
+                                <span class="badge-dias @DiasBadge(d)">@d d</span>
+                            }
+                            else { <span class="text-muted">–</span> }
+                        </td>
+                        <td>
+                            <a asp-action="Detalhe" asp-route-codigo="@item.Codigo"
+                               class="btn btn-sm btn-outline-depotce">Detalhes →</a>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginação -->
+@if (totalItens > 0)
+{
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">@InicioPagina()–@FimPagina() de @totalItens</span>
+            <form method="get" asp-action="Index" class="d-inline-flex align-items-center gap-1">
+                <input type="hidden" name="busca"      value="@busca" />
+                <input type="hidden" name="cliente"    value="@cliente" />
+                <input type="hidden" name="status"     value="@status" />
+                <input type="hidden" name="ordenarPor" value="@ordenarPor" />
+                <input type="hidden" name="ordemAsc"   value="@ordemAsc.ToString().ToLowerInvariant()" />
+                <input type="hidden" name="pagina"     value="1" />
+                <label class="small text-muted mb-0 ms-2">por página:</label>
+                <select name="itensPorPagina" class="form-select form-select-sm w-auto"
+                        onchange="this.form.submit()">
+                    @foreach (var n in new[] { 10, 20, 50 })
+                    {
+                        if (n == itensPorPagina) { <option value="@n" selected>@n</option> }
+                        else                     { <option value="@n">@n</option> }
+                    }
+                </select>
+            </form>
+        </div>
+        @if (totalPaginas > 1)
+        {
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(paginaAtual <= 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="@ordenarPor"
+                       asp-route-ordemAsc="@ordemAsc.ToString().ToLowerInvariant()"
+                       asp-route-pagina="@(paginaAtual - 1)"
+                       asp-route-itensPorPagina="@itensPorPagina">‹</a>
+                </li>
+                @{ var pIni = Math.Max(1, paginaAtual - 2); var pFim = Math.Min(totalPaginas, paginaAtual + 2); }
+                @for (var p = pIni; p <= pFim; p++)
+                {
+                    var pg = p;
+                    <li class="page-item @(pg == paginaAtual ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                           asp-route-status="@status" asp-route-ordenarPor="@ordenarPor"
+                           asp-route-ordemAsc="@ordemAsc.ToString().ToLowerInvariant()"
+                           asp-route-pagina="@pg"
+                           asp-route-itensPorPagina="@itensPorPagina">@pg</a>
+                    </li>
+                }
+                <li class="page-item @(paginaAtual >= totalPaginas ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index" asp-route-busca="@busca" asp-route-cliente="@cliente"
+                       asp-route-status="@status" asp-route-ordenarPor="@ordenarPor"
+                       asp-route-ordemAsc="@ordemAsc.ToString().ToLowerInvariant()"
+                       asp-route-pagina="@(paginaAtual + 1)"
+                       asp-route-itensPorPagina="@itensPorPagina">›</a>
+                </li>
+            </ul>
+        }
+    </div>
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mt-4">
+    <a asp-action="ExportarExcel" asp-route-busca="@busca" asp-route-cliente="@cliente" asp-route-status="@status" asp-route-proximos="@proximosDias" asp-route-ordenarPor="@ordenarPor" asp-route-ordemAsc="@ordemAsc.ToString().ToLowerInvariant()"
+       class="btn btn-sm btn-success">Exportar Excel</a>
+    <a asp-action="ExportarPdf" asp-route-busca="@busca" asp-route-cliente="@cliente" asp-route-status="@status" asp-route-proximos="@proximosDias" asp-route-ordenarPor="@ordenarPor" asp-route-ordemAsc="@ordemAsc.ToString().ToLowerInvariant()"
+       class="btn btn-sm btn-outline-danger">Gerar PDF do inventário</a>
+    <a asp-action="Relatorios" class="btn btn-sm btn-outline-secondary">Relatórios e visões BI</a>
+</div>

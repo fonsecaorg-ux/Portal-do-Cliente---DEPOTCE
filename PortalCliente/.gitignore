@@ -1,0 +1,37 @@
+# Build
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+out/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.cache
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+*.dll
+*.pdb
+*.exe
+*.nupkg
+*.log
+packages/
+
+# Bancos SQLite (criados na execução; não versionar)
+*.db
+*.db-shm
+*.db-wal
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# User secrets
+secrets.json
+appsettings.*.local.json
